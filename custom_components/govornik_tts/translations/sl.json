@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nastavitev integracije z Govornikom",
+        "description": "Konfigurirajte svojo integracijo z Govornikom. Izberite glas za sintezo govora.",
+        "data": {
+          "voice": "Glas"
+        },
+        "data_description": {
+          "voice": "Izberite glas, ki ga želite uporabiti za sintezo govora"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Neuspešna povezava z Govornik API. Preverite internetno povezavo in poskusite znova.",
+      "invalid_voice": "Izbrani glas ni na voljo. Prosimo, izberite drug glas.",
+      "unknown": "Prišlo je do nepričakovane napake. Prosim, poskusite znova."
+    },
+    "abort": {
+      "already_configured": "Govornik TTS je že konfiguriran. Nastavitve lahko spremenite v možnostih integracije.",
+      "no_voices": "Iz Govornik API ni bilo možno prejeti glasov. Preverite internetno povezavo in poskusite znova pozneje."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti integracije Govornika",
+        "description": "Tukaj lahko posodobite svojo integracijo s Govornikom. Spremembe bodo začele veljati takoj.",
+        "data": {
+          "voice": "Glas"
+        },
+        "data_description": {
+          "voice": "Izberite glas, ki ga želite uporabiti za sintezo govora"
+        }
+      }
+    },
+    "abort": {
+      "no_voices": "Iz Govornik API ni bilo možno prejeti glasov. Preverite internetno povezavo in poskusite znova pozneje."
+    }
+  },
+  "entity": {
+    "tts": {
+      "govornik_tts": {
+        "name": "Govornik TTS"
+      }
+    }
+  }
+}

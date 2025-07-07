@@ -1,0 +1,13 @@
+{
+  "domain": "govornik_tts",
+  "name": "Govornik TTS",
+  "codeowners": ["@nikigre"],
+  "config_flow": true,
+  "documentation": "https://govornik.eu/govornik-api",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.0.0",
+  "icons": ["icon.png"],
+  "logos": ["logo.png", "logo@2x.png"]
+}
