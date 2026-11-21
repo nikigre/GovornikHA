@@ -1,6 +1,9 @@
 {
   "domain": "govornik_tts",
   "name": "Govornik TTS",
+  "categories": [
+    "ai_voice.speech"
+  ],
   "codeowners": [
     "@nikigre"
   ],
