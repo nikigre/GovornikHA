@@ -1,176 +1,109 @@
-"""Config flow for Govornik TTS integration."""
+"""Config flow for the Govornik TTS integration."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-import aiohttp
-import re
 import voluptuous as vol
 
-from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
+
+from .api import GovornikClient, GovornikConnectionError, GovornikError
+from .const import CONF_VOICE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "govornik_tts"
 
-STEP_USER_DATA_SCHEMA = vol.Schema({
-    vol.Required("voice"): vol.In({}),  # Will be populated dynamically
-})
+def _voice_schema(voices: list[str], default: str | None) -> vol.Schema:
+    """Build the voice selection schema."""
+    if default not in voices:
+        default = voices[0]
+    return vol.Schema(
+        {
+            vol.Required(CONF_VOICE, default=default): SelectSelector(
+                SelectSelectorConfig(
+                    options=voices, mode=SelectSelectorMode.DROPDOWN
+                )
+            ),
+        }
+    )
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+
+async def _async_fetch_voices(flow: ConfigFlow | OptionsFlow) -> tuple[list[str], str | None]:
+    """Fetch voices, returning (voices, error_key)."""
+    client = GovornikClient(async_get_clientsession(flow.hass))
+    try:
+        voices = await client.async_get_voices()
+    except GovornikConnectionError:
+        return [], "cannot_connect"
+    except GovornikError:
+        _LOGGER.exception("Unexpected response from Govornik API")
+        return [], "unknown"
+    if not voices:
+        return [], "no_voices"
+    return voices, None
+
+
+class GovornikConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Govornik TTS."""
 
     VERSION = 1
 
-    def __init__(self):
-        """Initialize the config flow."""
-        self._voices = []
-        self._errors = {}
-
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
-        if user_input is not None:
-            return self.async_create_entry(
-                title="Govornik TTS",
-                data=user_input,
+        if user_input and CONF_VOICE in user_input:
+            return self.async_create_entry(title="Govornik", data=user_input)
+
+        voices, error = await _async_fetch_voices(self)
+        if error:
+            # Show a retryable form instead of aborting; submitting it retries.
+            return self.async_show_form(
+                step_id="user", data_schema=vol.Schema({}), errors={"base": error}
             )
 
-        # Fetch voices first
-        await self._fetch_voices()
-        
-        if not self._voices:
-            return self.async_abort(reason="no_voices")
-
-        # Create dynamic schema with available voices
-        voice_options = {voice: voice for voice in self._voices}
-        schema = vol.Schema({
-            vol.Required("voice", default=self._voices[0]): vol.In(voice_options),
-        })
-
         return self.async_show_form(
-            step_id="user",
-            data_schema=schema,
-            errors=self._errors,
+            step_id="user", data_schema=_voice_schema(voices, None)
         )
 
-    async def _fetch_voices(self) -> None:
-        """Fetch available voices from the Govornik API."""
-        try:
-            session = async_get_clientsession(self.hass)
-            async with session.get("https://s1.govornik.eu/voices") as response:
-                if response.status != 200:
-                    _LOGGER.error("Failed to fetch voices: %s", await response.text())
-                    self._voices = []
-                    return
-                    
-                raw_voices = await response.text()
-                self._voices = [
-                    re.split(r'\s+', line)[0]
-                    for line in raw_voices.splitlines()
-                    if line.strip()
-                ]
-                _LOGGER.debug("Fetched voices: %s", self._voices)
-                
-        except aiohttp.ClientError as err:
-            _LOGGER.error("Voice fetch error: %s", err)
-            self._voices = []
-        except Exception as err:
-            _LOGGER.error("Unexpected error fetching voices: %s", err)
-            self._voices = []
-
     @staticmethod
-    def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
-    ) -> OptionsFlowHandler:
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> GovornikOptionsFlow:
         """Create the options flow."""
-        return OptionsFlowHandler(config_entry)
+        return GovornikOptionsFlow()
 
 
-class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options flow for Govornik TTS."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
-        self._voices = []
+class GovornikOptionsFlow(OptionsFlow):
+    """Handle options for Govornik TTS."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            return self.async_create_entry(data=user_input)
 
-        # Fetch voices for options
-        await self._fetch_voices()
-        
-        if not self._voices:
-            return self.async_abort(reason="no_voices")
+        voices, error = await _async_fetch_voices(self)
+        if error:
+            return self.async_abort(reason=error)
 
-        # Get current voice from options (this is what we're trying to fix)
-        current_voice = self.config_entry.options.get("voice")
-        
-        # If no voice in options yet, use the one from initial data
-        if not current_voice:
-            current_voice = self.config_entry.data.get("voice")
-            
-        # Debug logging
-        _LOGGER.debug("Options voice: %s", self.config_entry.options.get("voice"))
-        _LOGGER.debug("Data voice: %s", self.config_entry.data.get("voice"))
-        _LOGGER.debug("Current voice selected: %s", current_voice)
-        _LOGGER.debug("Available voices: %s", self._voices)
-            
-        # Ensure current voice is valid
-        if current_voice not in self._voices:
-            current_voice = self._voices[0] if self._voices else None
-        
-        # Create dynamic schema with available voices
-        voice_options = {voice: voice for voice in self._voices}
-        schema = vol.Schema({
-            vol.Required("voice", default=current_voice): vol.In(voice_options),
-        })
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=schema,
+        current = self.config_entry.options.get(
+            CONF_VOICE, self.config_entry.data.get(CONF_VOICE)
         )
-
-    async def _fetch_voices(self) -> None:
-        """Fetch available voices from the Govornik API."""
-        try:
-            session = async_get_clientsession(self.hass)
-            async with session.get("https://s1.govornik.eu/voices") as response:
-                if response.status != 200:
-                    _LOGGER.error("Failed to fetch voices: %s", await response.text())
-                    self._voices = []
-                    return
-                    
-                raw_voices = await response.text()
-                self._voices = [
-                    re.split(r'\s+', line)[0]
-                    for line in raw_voices.splitlines()
-                    if line.strip()
-                ]
-                _LOGGER.debug("Fetched voices for options: %s", self._voices)
-                
-        except aiohttp.ClientError as err:
-            _LOGGER.error("Voice fetch error in options: %s", err)
-            self._voices = []
-        except Exception as err:
-            _LOGGER.error("Unexpected error fetching voices in options: %s", err)
-            self._voices = []
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidVoice(HomeAssistantError):
-    """Error to indicate there is invalid voice."""
+        return self.async_show_form(
+            step_id="init", data_schema=_voice_schema(voices, current)
+        )

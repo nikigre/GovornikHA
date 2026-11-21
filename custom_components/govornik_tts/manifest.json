@@ -1,13 +1,15 @@
 {
   "domain": "govornik_tts",
   "name": "Govornik TTS",
-  "codeowners": ["@nikigre"],
+  "codeowners": [
+    "@nikigre"
+  ],
   "config_flow": true,
-  "documentation": "https://govornik.eu/govornik-api",
+  "documentation": "https://github.com/nikigre/GovornikHA",
   "integration_type": "service",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/nikigre/GovornikHA/issues",
   "requirements": [],
-  "version": "1.0.0",
-  "icons": ["icon.png"],
-  "logos": ["logo.png", "logo@2x.png"]
+  "single_config_entry": true,
+  "version": "1.1.0"
 }

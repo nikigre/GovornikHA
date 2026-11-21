@@ -48,11 +48,19 @@ No YAML setup is required.
 In your `scripts.yaml` or automation:
 
 ```yaml
-service: tts.govornik_tts_say
+action: tts.speak
+target:
+  entity_id: tts.govornik
 data:
-entity_id: media_player.living_room_speaker
-message: "Pozdravljeni! To je test sinteze govora."
+  media_player_entity_id: media_player.living_room_speaker
+  message: "Pozdravljeni! To je test sinteze govora."
+  # Optional overrides:
+  # options:
+  #   voice: <voice id>
+  #   format: wav
 ```
+
+Requires Home Assistant 2025.3 or newer.
 
 ## 🌐 Supported Languages
 

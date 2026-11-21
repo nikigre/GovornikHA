@@ -1,0 +1,4 @@
+pytest-homeassistant-custom-component
+# Requirements of the built-in tts component
+mutagen
+ha-ffmpeg

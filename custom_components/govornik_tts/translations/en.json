@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Govornik TTS",
+        "description": "Choose the voice used for speech synthesis.",
+        "data": {
+          "voice": "Voice"
+        },
+        "data_description": {
+          "voice": "Default voice used for speech synthesis."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Govornik API. Submit to try again.",
+      "no_voices": "The Govornik API returned no voices. Submit to try again.",
+      "unknown": "Unexpected error. Submit to try again."
+    },
+    "abort": {
+      "single_instance_allowed": "Govornik TTS is already configured. Change the voice in the integration options."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Govornik TTS options",
+        "data": {
+          "voice": "Voice"
+        },
+        "data_description": {
+          "voice": "Default voice used for speech synthesis."
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Failed to connect to the Govornik API.",
+      "no_voices": "The Govornik API returned no voices.",
+      "unknown": "Unexpected error."
+    }
+  }
+}
