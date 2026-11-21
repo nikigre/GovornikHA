@@ -18,13 +18,8 @@ Supports user-selectable voices and native Home Assistant UI configuration.
 
 ## 📦 Installation
 
-### Option 1: [HACS](https://hacs.xyz/)
-Coming soon.
-
-### Option 2: Manual
-
 1. Clone this repository or download the ZIP
-2. Copy the `govornik_tts` folder into your Home Assistant config directory:
+2. Copy the `custom_components/govornik_tts` folder into the `custom_components` folder of your Home Assistant config directory
 3. Restart Home Assistant
 
 ---
@@ -95,7 +90,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 💡 TODO
 
-- [ ] HACS support
 - [ ] Voice preview/test button in UI
 - [ ] Caching of audio files for repeated phrases
 
